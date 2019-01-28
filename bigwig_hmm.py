@@ -1,9 +1,16 @@
+"""
+This is a wrapper script to run HMMs (pomegranate or hmmlearn)
+with a few bells and whistles
+v1.1
+
+"""
 import bbi
 import numpy as np
 import pandas as pd
 import bioframe
 from pomegranate import *
 
+Class   bigwig_HMM():
 
 
 def chroms():
@@ -71,3 +78,5 @@ def write_to_file(df,filename):
     cols_to_keep=['chrom','start','end','state','score','strand','start','end','RGB']
     df.to_csv(filename, sep='\t', header=False, columns=cols_to_keep, index=False)
     return print('All Finished!')
+
+main()
