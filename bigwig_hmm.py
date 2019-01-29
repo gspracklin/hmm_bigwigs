@@ -31,6 +31,7 @@ def create_df(inputfile, chroms):
 
 def hmm(df,num_states):
     "HMM program"
+    df['value']=df['value'].replace(0.000000,np.nan) #this removes unmappable areas of chr
     model = HiddenMarkovModel.from_samples(NormalDistribution,X=[df['value'].values], n_components=num_states)
     states=model.viterbi(df['value'].values)
     listofstates = [i[0] for i in states[1]]
@@ -40,40 +41,34 @@ def hmm(df,num_states):
 
 def sparse(df):
     "Merge neighboring bins with same state"
-    state_list=[]
     chr_list=[]
     start_list=[]
+    state_list=[]
     end_list=[]
-    state_list.append(df['state'].iloc[0])
-    chr_list.append(df['chrom'].iloc[0])
-    start_list.append(df['start'].iloc[0])
-    previous_state=df['state'].iloc[0]
 
-    for index, row in df.iloc[1:].iterrows():
-        if index != 0 and df['start'].iloc[index] == 0:
-            end_list.append(df['end'].iloc[(index-1)])
-            chr_list.append(df['chrom'].iloc[index])
-            start_list.append(df['start'].iloc[index])
-            state_list.append(df['state'].iloc[index])
-            continue
-        if df['state'].iloc[index] == df['state'].iloc[(index-1)]:
-            continue
-        else:
-            end_list.append(df['end'].iloc[(index-1)])
-            chr_list.append(df['chrom'].iloc[index])
-            start_list.append(df['start'].iloc[index])
-            state_list.append(df['state'].iloc[index])
-    end_list.append(df['end'].iloc[(index)])
+    for item in df['chrom'].unique():
+        chrom_df=df[df['chrom']==item].reset_index()
+        print('Starting chr '+item)
+
+        chr_list.append((chrom_df['chrom'].iloc[0]))
+        start_list.append((chrom_df['start'].iloc[0]))
+        state_list.append((chrom_df['state'].iloc[0]))
+        for index, row in chrom_df[1:].iterrows():
+            if chrom_df['state'].iloc[index] == chrom_df['state'].iloc[(index-1)]:
+                continue
+            else:
+                end_list.append(chrom_df['end'].iloc[(index-1)])
+                chr_list.append(chrom_df['chrom'].iloc[index])
+                start_list.append(chrom_df['start'].iloc[index])
+                state_list.append(chrom_df['state'].iloc[index])
+        if len(start_list) != len(end_list):
+            end_list.append(chrom_df['end'].iloc[(index)])
 
     keys=['chrom','start','end','state']
     values=[chr_list,start_list,end_list,state_list]
     dictionary = dict(zip(keys, values))
     df_sparse=pd.DataFrame.from_dict(dictionary)
     return df_sparse
-
-def sort_states(df):
-    "Re-sort states with LAD regions labelled State 0"
-    df = df[(df['chrom'] == 'chr11') & (df['start'] >= 40000000) & (df['start'] >= 42000000)]
 
 def write_to_file(df,outputfile,num_states):
     df['score'] = '0'
