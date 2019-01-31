@@ -31,7 +31,8 @@ def create_df(inputfile, chroms):
 
 def hmm(df,num_states):
     "HMM program"
-    df['value']=df['value'].replace(0.000000,np.nan) #this removes unmappable areas of chr
+    df['value']=df['value'].replace(0,np.nan) #this removes unmappable areas of chr
+    df_dropna=df.dropna(subset=['value']) #this removes unmappable areas of chr (NaN is otherwise considered 0)
     model = HiddenMarkovModel.from_samples(NormalDistribution,X=[df['value'].values], n_components=num_states)
     states=model.viterbi(df['value'].values)
     listofstates = [i[0] for i in states[1]]
@@ -69,6 +70,45 @@ def sparse(df):
     dictionary = dict(zip(keys, values))
     df_sparse=pd.DataFrame.from_dict(dictionary)
     return df_sparse
+
+def merge_different_hmmstates(df,strong=0, weak=2, depleted=1):
+    "merge 3 HMM states into 2 "
+    import pandas as pd
+
+    chr_list=[]
+    start_list=[]
+    end_list=[]
+
+
+    for item in df['chrom'].unique():
+        chrom_df=df[df['chrom']==item]
+        start=1
+        print('Starting chr '+item)
+        for index, row in chrom_df.iterrows():
+            if start == 1:
+                if df['state'].iloc[index] == strong or df['state'].iloc[index] == weak:
+                    chr_list.append(df['chrom'].iloc[index])
+                    start_list.append(df['start'].iloc[index])
+                    start = 0
+                    continue
+                else:
+                    continue
+            elif df['state'].iloc[index] == depleted:
+                end_list.append(df['end'].iloc[(index-1)])
+                start=1
+            else:continue
+        if start == 0:
+            end_list.append(df['end'].iloc[(index)])
+
+        if len(chr_list) != len(start_list) or len(start_list) != len(end_list):
+            print('Wrong Lengths!')
+            break
+
+    keys=['chrom','start','end','state']
+    values=[chr_list,start_list,end_list]
+    dictionary = dict(zip(keys, values))
+    df_merge= pd.DataFrame.from_dict(dictionary)
+    return df_merge
 
 def write_to_file(df,outputfile,num_states):
     df['score'] = '0'
