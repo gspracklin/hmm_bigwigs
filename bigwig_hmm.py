@@ -1,7 +1,7 @@
 """
 This is a wrapper script to run HMMs (pomegranate or hmmlearn)
 with a few bells and whistles
-v1.2
+v1.3
 """
 #!/bin/env python
 import argparse
@@ -49,7 +49,6 @@ def sparse(df):
 
     for item in df['chrom'].unique():
         chrom_df=df[df['chrom']==item].reset_index()
-        print('Starting chr '+item)
 
         chr_list.append((chrom_df['chrom'].iloc[0]))
         start_list.append((chrom_df['start'].iloc[0]))
@@ -71,29 +70,27 @@ def sparse(df):
     df_sparse=pd.DataFrame.from_dict(dictionary)
     return df_sparse
 
-def merge_different_hmmstates(df,strong=0, weak=2, depleted=1):
-    "merge 3 HMM states into 2 "
+def merge_different_hmmstates(df,cLAD, open_state):
+    "merge strong and weak HMM states into 2 "
     import pandas as pd
-
     chr_list=[]
     start_list=[]
     end_list=[]
-
+    weak=int(3-(cLAD+open_state))
 
     for item in df['chrom'].unique():
         chrom_df=df[df['chrom']==item]
         start=1
-        print('Starting chr '+item)
         for index, row in chrom_df.iterrows():
             if start == 1:
-                if df['state'].iloc[index] == strong or df['state'].iloc[index] == weak:
+                if df['state'].iloc[index] == cLAD or df['state'].iloc[index] == weak:
                     chr_list.append(df['chrom'].iloc[index])
                     start_list.append(df['start'].iloc[index])
                     start = 0
                     continue
                 else:
                     continue
-            elif df['state'].iloc[index] == depleted:
+            elif df['state'].iloc[index] == open_state:
                 end_list.append(df['end'].iloc[(index-1)])
                 start=1
             else:continue
@@ -110,13 +107,75 @@ def merge_different_hmmstates(df,strong=0, weak=2, depleted=1):
     df_merge= pd.DataFrame.from_dict(dictionary)
     return df_merge
 
+def open_region(df):
+    "Find the most common state in open regions"
+    from statistics import mode
+    open_list=[]
+    new_df=df[(df['chrom']=='chr11') &
+          (df['start']>=10000) &
+          (df['start']<=10000000)]
+    open_list.append(new_df['state'].value_counts().idxmax())
+
+    new_df2=df[(df['chrom']=='chr11') &
+          (df['start']>=47000000) &
+          (df['start']<=48000000)]
+    open_list.append(new_df2['state'].value_counts().idxmax())
+
+    new_df3=df[(df['chrom']=='chr10') &
+          (df['start']>=68000000) &
+          (df['start']<=74000000)]
+    open_list.append(new_df3['state'].value_counts().idxmax())
+
+    new_df4=df[(df['chrom']=='chr10') &
+          (df['start']>=102000000) &
+          (df['start']<=104000000)]
+    open_list.append(new_df4['state'].value_counts().idxmax())
+
+    #weak stopgap to having 2 equal states
+    if len(open_list) % 2 == 0:
+        open_list.pop()
+
+    return mode(open_list)
+
+def strong_region(df, open_state):
+    "Find the most common state in cLADs"
+    from statistics import mode
+    open_list=[]
+    new_df=df[(df['chrom']=='chr11') &
+          (df['start']>=41800000) &
+          (df['start']<=43200000)]
+    open_list.append(new_df['state'].value_counts().idxmax())
+
+    new_df2=df[(df['chrom']=='chr11') &
+          (df['start']>=110600000) &
+          (df['start']<=111200000)]
+    open_list.append(new_df2['state'].value_counts().idxmax())
+
+    new_df3=df[(df['chrom']=='chr10') &
+          (df['start']>=8500000) &
+          (df['start']<=11000000)]
+    open_list.append(new_df3['state'].value_counts().idxmax())
+
+    new_df4=df[(df['chrom']=='chr10') &
+          (df['start']>=105000000) &
+          (df['start']<=109000000)]
+    open_list.append(new_df4['state'].value_counts().idxmax())
+
+    #weak stopgap to having 2 equal states
+    if len(open_list) % 2 == 0:
+        open_list.pop()
+    if open_state == mode(open_list):
+        print('Unable to assign strong, weak, depleted states')
+    return mode(open_list)
+
+
 def write_to_file(df,outputfile,num_states):
     df['score'] = '0'
     df['strand'] = '.'
     filename=outputfile+'_'+str(num_states)+'_state_HMM.bed'
     df.loc[df['state'] == 0, 'RGB'] = '0,255,0'
-    df.loc[df['state'] == 1, 'RGB'] = '0,255,255'
-    df.loc[df['state'] == 2, 'RGB'] = '255,0,0'
+    df.loc[df['state'] == 1, 'RGB'] = '255,0,0'
+    df.loc[df['state'] == 2, 'RGB'] = '0,255,255'
     cols_to_keep=['chrom','start','end','state','score','strand','start','end','RGB']
     df.to_csv(filename, sep='\t', header=False, columns=cols_to_keep, index=False)
 
@@ -124,17 +183,20 @@ def main(args):
     print('Starting HMM on '+ args.inputfile)
     chroms=get_chroms(args.genome)
     df=create_df(inputfile=args.inputfile,chroms=chroms)
-    print('Original bigwig in a DataFrame:')
-    print(df.head())
     df=hmm(df,args.num_states)
     print('Finished hmm!')
-    print('DataFrame with HMM states:')
-    print(df.head())
     df_sparse=sparse(df)
-    print('finished sparse_df!')
-    print('Merged DataFrame with HMM states')
-    print(df_sparse.head())
-    filename_end=write_to_file(df_sparse,num_states=args.num_states,outputfile=args.outputfile)
+    open_state=open_region(df)
+    print('Open state is '+str(open_state))
+    cLAD=strong_region(df, open_state=open_state)
+    print('cLAD state is '+str(cLAD))
+    weak=3-(int(cLAD)+int(open_state))
+    print('weak state is '+str(weak))
+    df_final=merge_different_hmmstates(df_sparse, cLAD=cLAD, open=open_state)
+    df_final.to_csv(args.outputfile+'_combined_state.bed', sep='\t', header=False, index=False)
+    print('write first file')
+    df_sparse[df_sparse['state']==weak].to_csv(args.outputfile+'_weak_state.bed', sep='\t', header=False, index=False)
+    df_sparse[df_sparse['state']==cLAD].to_csv(args.outputfile+'_strong_state.bed', sep='\t', header=False, index=False)
     print("Finished writing to file")
 
 
