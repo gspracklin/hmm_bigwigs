@@ -70,13 +70,13 @@ def sparse(df):
     df_sparse=pd.DataFrame.from_dict(dictionary)
     return df_sparse
 
-def merge_different_hmmstates(df,cLAD, open_state):
+def merge_different_hmmstates(df,cLAD, open):
     "merge strong and weak HMM states into 2 "
     import pandas as pd
     chr_list=[]
     start_list=[]
     end_list=[]
-    weak=int(3-(cLAD+open_state))
+    weak=int(3-(cLAD+open))
 
     for item in df['chrom'].unique():
         chrom_df=df[df['chrom']==item]
@@ -90,7 +90,7 @@ def merge_different_hmmstates(df,cLAD, open_state):
                     continue
                 else:
                     continue
-            elif df['state'].iloc[index] == open_state:
+            elif df['state'].iloc[index] == open:
                 end_list.append(df['end'].iloc[(index-1)])
                 start=1
             else:continue
@@ -192,11 +192,13 @@ def main(args):
     print('cLAD state is '+str(cLAD))
     weak=3-(int(cLAD)+int(open_state))
     print('weak state is '+str(weak))
+    write_to_file(df_sparse,args.outputfile,args.num_states)
     df_final=merge_different_hmmstates(df_sparse, cLAD=cLAD, open=open_state)
     df_final.to_csv(args.outputfile+'_combined_state.bed', sep='\t', header=False, index=False)
     print('write first file')
-    df_sparse[df_sparse['state']==weak].to_csv(args.outputfile+'_weak_state.bed', sep='\t', header=False, index=False)
-    df_sparse[df_sparse['state']==cLAD].to_csv(args.outputfile+'_strong_state.bed', sep='\t', header=False, index=False)
+    df_sparse[df_sparse['state']==0].to_csv(args.outputfile+'_0_state.bed', sep='\t', header=False, index=False)
+    df_sparse[df_sparse['state']==1].to_csv(args.outputfile+'_1_state.bed', sep='\t', header=False, index=False)
+    df_sparse[df_sparse['state']==2].to_csv(args.outputfile+'_2_state.bed', sep='\t', header=False, index=False)
     print("Finished writing to file")
 
 
