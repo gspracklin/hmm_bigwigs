@@ -31,8 +31,8 @@ def create_df(inputfile, chroms):
 
 def hmm(df,num_states):
     "HMM program"
-    df['value']=df['value'].replace(0,np.nan) #this removes unmappable areas of chr
-    df_dropna=df.dropna(subset=['value']) #this removes unmappable areas of chr (NaN is otherwise considered 0)
+    #df['value']=df['value'].replace(0,np.nan) #this removes unmappable areas of chr
+    #df_dropna=df.dropna(subset=['value']) #this removes unmappable areas of chr (NaN is otherwise considered 0)
     model = HiddenMarkovModel.from_samples(NormalDistribution,X=[df['value'].values], n_components=num_states)
     states=model.viterbi(df['value'].values)
     listofstates = [i[0] for i in states[1]]
