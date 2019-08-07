@@ -172,7 +172,7 @@ def strong_region(df, open_state):
 def write_to_file(df,outputfile,num_states):
     df['score'] = '0'
     df['strand'] = '.'
-    filename=outputfile+'_'+str(num_states)+'_state_HMM.bed'
+    filename=outputfile+'_'+str(num_states)+'_state_HMM_colored.bed'
     df.loc[df['state'] == 0, 'RGB'] = '0,255,0'
     df.loc[df['state'] == 1, 'RGB'] = '255,0,0'
     df.loc[df['state'] == 2, 'RGB'] = '0,255,255'
