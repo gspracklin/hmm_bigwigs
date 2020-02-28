@@ -44,9 +44,10 @@ def hmm(df, num_states):
     states = model.predict(vals)
 
     # Rename states to increase with mean signal
-    order = dict(np.argsort(df['value'].groupby(states).mean()))
+    order = np.argsort(df['value'].groupby(states).mean())
     states = [order[s] for s in states]
     df["state"] = states
+    df['state'][np.isnan(df['value'])] = np.nan
     return df
 
 
@@ -78,7 +79,7 @@ def sparse(df):
     values = [chr_list, start_list, end_list, state_list]
     dictionary = dict(zip(keys, values))
     df_sparse = pd.DataFrame.from_dict(dictionary)
-    return df_sparse
+    return df_sparse.dropna()
 
 
 def merge_different_hmmstates(df, cLAD, open):
