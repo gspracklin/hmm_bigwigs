@@ -199,7 +199,7 @@ def write_to_file(df, outputfile, num_states, cmap='coolwarm'):
     df["score"] = "0"
     df["strand"] = "."
     filename = outputfile + "_" + str(num_states) + "_state_HMM_colored.bed"
-    df['RGB'] = df["state"].apply(lambda x: colors[x])
+    df['RGB'] = df["state"].apply(lambda x: ','.join([str(int(round(c*255))) for c in colors[x][:-1]]))
     cols_to_keep = [
         "chrom",
         "start",
