@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import bioframe
 from pomegranate import HiddenMarkovModel, NormalDistribution
+import matplotlib.pyplot as plt
 
 
 def get_chroms(genome, ignoreXYMT=True):
@@ -191,13 +192,14 @@ def strong_region(df, open_state):
     return mode(open_list)
 
 
-def write_to_file(df, outputfile, num_states):
+def write_to_file(df, outputfile, num_states, cmap='coolwarm'):
+    states = list(range(num_states))
+    cmap = plt.get_cmap(cmap)
+    colors = {s:cmap(s/states[-1]) for s in states}
     df["score"] = "0"
     df["strand"] = "."
     filename = outputfile + "_" + str(num_states) + "_state_HMM_colored.bed"
-    df.loc[df["state"] == 0, "RGB"] = "255,0,0"
-    df.loc[df["state"] == 1, "RGB"] = "100,100,100"
-    df.loc[df["state"] == 2, "RGB"] = "0,0,255"
+    df['RGB'] = df["state"].apply(lambda x: colors[x])
     cols_to_keep = [
         "chrom",
         "start",
