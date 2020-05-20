@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 def get_chroms(genome, ignoreXYMT=True):
     "Get list of chroms to analyze"
     print("Using chroms from " + genome)
-    chromsizes = bioframe.fetch_chromsizes(genome)
+    chromsizes = bioframe.fetch_chromsizes(genome, filter_chroms=True)
     chr_list = list(chromsizes.index)
     if ignoreXYMT == True:
         chr_list = [i for i in chr_list if i not in ("chrM", "chrX", "chrY")]
