@@ -44,10 +44,10 @@ def hmm(df, num_states):
     states = model.predict(vals)
 
     # Rename states to increase with mean signal
-    order = np.argsort(df['value'].groupby(states).mean())
+    order = np.argsort(df["value"].groupby(states).mean())
     states = [order[s] for s in states]
     df["state"] = states
-    df['state'][np.isnan(df['value'])] = np.nan
+    df["state"][np.isnan(df["value"])] = np.nan
     return df
 
 
@@ -83,7 +83,7 @@ def sparse(df):
 
 
 def merge_different_hmmstates(df, cLAD, open):
-    "merge strong and weak HMM states into 2 "
+    "merge strong and weak HMM states into 2"
     import pandas as pd
 
     chr_list = []
@@ -193,14 +193,15 @@ def strong_region(df, open_state):
     return mode(open_list)
 
 
-def write_to_file(df, outputfile, num_states, cmap='coolwarm'):
-    states = list(range(num_states))
+def write_to_file(df, outputfile=None, cmap="coolwarm"):
+    states = list(sorted(df["state"].unique()))
     cmap = plt.get_cmap(cmap)
-    colors = {s:cmap(s/states[-1]) for s in states}
+    colors = {s: cmap(s / states[-1]) for s in states}
     df["score"] = "0"
     df["strand"] = "."
-    filename = outputfile + "_" + str(num_states) + "_state_HMM_colored.bed"
-    df['RGB'] = df["state"].apply(lambda x: ','.join([str(int(round(c*255))) for c in colors[x][:-1]]))
+    df["RGB"] = df["state"].apply(
+        lambda x: ",".join([str(int(round(c * 255))) for c in colors[x][:-1]])
+    )
     cols_to_keep = [
         "chrom",
         "start",
@@ -212,4 +213,11 @@ def write_to_file(df, outputfile, num_states, cmap='coolwarm'):
         "start",
         "RGB",
     ]
-    df.to_csv(filename, sep="\t", header=False, columns=cols_to_keep, index=False)
+    if outputfile:
+        df.to_csv(outputfile, sep="\t", header=False, columns=cols_to_keep, index=False)
+    else:
+        print(
+            df.to_csv(
+                outputfile, sep="\t", header=False, columns=cols_to_keep, index=False
+            )
+        )

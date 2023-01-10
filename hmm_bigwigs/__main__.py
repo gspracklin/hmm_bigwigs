@@ -3,9 +3,11 @@
 
 from hmm_bigwigs import *
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
-    description="Create bedfile of HMM states from bigwig")
+        description="Create bedfile of HMM states from bigwig"
+    )
     parser.add_argument(
         "-i",
         "--inputfile",
@@ -34,7 +36,7 @@ def parse_args():
         help="Colormap to map states to colors",
         action="store",
         required=False,
-        default='coolwarm',
+        default="coolwarm",
     )
     parser.add_argument(
         "-o",
@@ -44,30 +46,39 @@ def parse_args():
         action="store",
         required=False,
     )
+    parser.add_argument(
+        "-save-split-files",
+        dest="savesplit",
+        help="Whether to save separate bed files split by state in addition to the output file",
+        action="store",
+        required=False,
+    )
     args = parser.parse_args()
     if args.outputfile is None:
-        args.outputfile=args.inputfile
+        args.outputfile = args.inputfile
     return args
+
 
 def main():
     args = parse_args()
-    print("Starting HMM on " + args.inputfile)
+    # print("Starting HMM on " + args.inputfile)
     chroms = get_chroms(args.genome)
     df = create_df(inputfile=args.inputfile, chroms=chroms)
     df = hmm(df, args.num_states)
-    print("Finished hmm!")
+    # print("Finished hmm!")
     df_sparse = sparse(df)
     write_to_file(df_sparse, args.outputfile, args.num_states, cmap=args.cmap)
     # df_final=merge_different_hmmstates(df_sparse, cLAD=cLAD, open=open_state)
     # df_final.to_csv(args.outputfile+'_combined_state.bed', sep='\t', header=False, index=False)
-    print("write first file")
-    df_sparse[df_sparse["state"] == 0].to_csv(
-        args.outputfile + "_0_state.bed", sep="\t", header=False, index=False
-    )
-    df_sparse[df_sparse["state"] == 1].to_csv(
-        args.outputfile + "_1_state.bed", sep="\t", header=False, index=False
-    )
-    df_sparse[df_sparse["state"] == 2].to_csv(
-        args.outputfile + "_2_state.bed", sep="\t", header=False, index=False
-    )
-    print("Finished writing to file")
+    # print("write first file")
+    if args.savesplit:
+        df_sparse[df_sparse["state"] == 0].to_csv(
+            args.outputfile + "_0_state.bed", sep="\t", header=False, index=False
+        )
+        df_sparse[df_sparse["state"] == 1].to_csv(
+            args.outputfile + "_1_state.bed", sep="\t", header=False, index=False
+        )
+        df_sparse[df_sparse["state"] == 2].to_csv(
+            args.outputfile + "_2_state.bed", sep="\t", header=False, index=False
+        )
+    # print("Finished writing to file")
