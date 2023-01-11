@@ -68,7 +68,7 @@ def main():
     df = hmm(df, args.num_states)
     # print("Finished hmm!")
     df_sparse = sparse(df)
-    write_to_file(df_sparse, args.outputfile, args.num_states, cmap=args.cmap)
+    write_to_file(df_sparse, args.outputfile, cmap=args.cmap)
     # df_final=merge_different_hmmstates(df_sparse, cLAD=cLAD, open=open_state)
     # df_final.to_csv(args.outputfile+'_combined_state.bed', sep='\t', header=False, index=False)
     # print("write first file")
