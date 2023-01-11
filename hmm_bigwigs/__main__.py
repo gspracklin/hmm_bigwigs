@@ -47,11 +47,12 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
-        "-save-split-files",
+        "--save-split-files",
         dest="savesplit",
         help="Whether to save separate bed files split by state in addition to the output file",
-        action="store",
+        action="store_true",
         required=False,
+        default=False,
     )
     args = parser.parse_args()
     if args.outputfile is None:
