@@ -41,7 +41,7 @@ def hmm(df, num_states):
     model = HiddenMarkovModel.from_samples(
         NormalDistribution, X=[vals], n_components=num_states
     )
-    states = model.predict(vals).astype(int)
+    states = model.predict(vals)
 
     # Rename states to increase with mean signal
     order = np.argsort(df["value"].groupby(states).mean())
