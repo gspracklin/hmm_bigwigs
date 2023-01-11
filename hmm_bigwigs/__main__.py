@@ -73,13 +73,11 @@ def main():
     # df_final.to_csv(args.outputfile+'_combined_state.bed', sep='\t', header=False, index=False)
     # print("write first file")
     if args.savesplit:
-        df_sparse[df_sparse["state"] == 0].to_csv(
-            args.outputfile + "_0_state.bed", sep="\t", header=False, index=False
-        )
-        df_sparse[df_sparse["state"] == 1].to_csv(
-            args.outputfile + "_1_state.bed", sep="\t", header=False, index=False
-        )
-        df_sparse[df_sparse["state"] == 2].to_csv(
-            args.outputfile + "_2_state.bed", sep="\t", header=False, index=False
-        )
+        for state in range(args.num_states):
+            df_sparse[df_sparse["state"] == state].to_csv(
+                f"{args.outputfile}_{state}_state.bed",
+                sep="\t",
+                header=False,
+                index=False,
+            )
     # print("Finished writing to file")
