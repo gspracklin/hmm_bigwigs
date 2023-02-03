@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 def get_chroms(genome, ignoreXYMT=True):
     "Get list of chroms to analyze"
     print("Using chroms from " + genome)
-    chromsizes = bioframe.fetch_chromsizes(genome)
+    chromsizes = bioframe.fetch_chromsizes(genome, filter_chroms=True)
     chr_list = list(chromsizes.index)
     if ignoreXYMT == True:
         chr_list = [i for i in chr_list if i not in ("chrM", "chrX", "chrY")]
@@ -120,77 +120,6 @@ def merge_different_hmmstates(df, cLAD, open):
     dictionary = dict(zip(keys, values))
     df_merge = pd.DataFrame.from_dict(dictionary)
     return df_merge
-
-
-def open_region(df):
-    "Find the most common state in open regions"
-    from statistics import mode
-
-    open_list = []
-    new_df = df[
-        (df["chrom"] == "chr11") & (df["start"] >= 10000) & (df["start"] <= 10000000)
-    ]
-    open_list.append(new_df["state"].value_counts().idxmax())
-
-    new_df2 = df[
-        (df["chrom"] == "chr11") & (df["start"] >= 47000000) & (df["start"] <= 48000000)
-    ]
-    open_list.append(new_df2["state"].value_counts().idxmax())
-
-    new_df3 = df[
-        (df["chrom"] == "chr10") & (df["start"] >= 68000000) & (df["start"] <= 74000000)
-    ]
-    open_list.append(new_df3["state"].value_counts().idxmax())
-
-    new_df4 = df[
-        (df["chrom"] == "chr10")
-        & (df["start"] >= 102000000)
-        & (df["start"] <= 104000000)
-    ]
-    open_list.append(new_df4["state"].value_counts().idxmax())
-
-    # weak stopgap to having 2 equal states
-    if len(open_list) % 2 == 0:
-        open_list.pop()
-
-    return mode(open_list)
-
-
-def strong_region(df, open_state):
-    "Find the most common state in cLADs"
-    from statistics import mode
-
-    open_list = []
-    new_df = df[
-        (df["chrom"] == "chr11") & (df["start"] >= 41800000) & (df["start"] <= 43200000)
-    ]
-    open_list.append(new_df["state"].value_counts().idxmax())
-
-    new_df2 = df[
-        (df["chrom"] == "chr11")
-        & (df["start"] >= 110600000)
-        & (df["start"] <= 111200000)
-    ]
-    open_list.append(new_df2["state"].value_counts().idxmax())
-
-    new_df3 = df[
-        (df["chrom"] == "chr10") & (df["start"] >= 8500000) & (df["start"] <= 11000000)
-    ]
-    open_list.append(new_df3["state"].value_counts().idxmax())
-
-    new_df4 = df[
-        (df["chrom"] == "chr10")
-        & (df["start"] >= 105000000)
-        & (df["start"] <= 109000000)
-    ]
-    open_list.append(new_df4["state"].value_counts().idxmax())
-
-    # weak stopgap to having 2 equal states
-    if len(open_list) % 2 == 0:
-        open_list.pop()
-    if open_state == mode(open_list):
-        print("Unable to assign strong, weak, depleted states")
-    return mode(open_list)
 
 
 def write_to_file(df, outputfile=None, cmap="coolwarm"):
