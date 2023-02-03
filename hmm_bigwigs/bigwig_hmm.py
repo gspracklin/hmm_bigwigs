@@ -23,14 +23,14 @@ def get_chroms(genome, ignoreXYMT=True):
     return chr_list
 
 
-def create_df(inputfile, chroms):
+def create_df(inputfile, view):
     "Create dataframe from bigwig"
-    df = pd.DataFrame(columns=["chrom", "start", "end", "value"])
-    for item in chroms:
-        ivals = list(bbi.fetch_intervals(inputfile, item, 0, -1))
+    df_list = []
+    for i, row in view.iterrows():
+        ivals = bbi.fetch_intervals(inputfile, row.chrom, row.start, row.end)
         df_new = pd.DataFrame(ivals, columns=["chrom", "start", "end", "value"])
-        df = df.append(df_new, ignore_index=True)
-    return df
+        df_list.append(df_new)
+    return pd.concat(df_list).reset_index(drop=True)
 
 
 def hmm(df, num_states):
