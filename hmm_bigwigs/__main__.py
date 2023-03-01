@@ -83,10 +83,7 @@ def main():
             )
     df = create_df(inputfile=args.inputfile, view=view)
     df = bf.assign_view(df, view).dropna(subset="value")
-    try:
-        df = df.groupby("view_region").apply(hmm, num_states=args.num_states)
-    except ValueError:
-        print(df)
+    df = df.groupby("view_region").apply(hmm, num_states=args.num_states)
     df_sparse = sparse(df)
     write_to_file(df_sparse, args.outputfile, cmap=args.cmap)
     if args.savesplit:
