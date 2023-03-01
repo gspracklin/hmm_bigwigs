@@ -39,7 +39,7 @@ def hmm(df, num_states):
     df = df.dropna(
         subset=["value"]
     )  # this removes unmappable areas of chr (NaN is otherwise considered 0)
-    if df.shape[0]==0:
+    if df.shape[0] == 0:
         df = df.assign(state=None)
         return df
     vals = df["value"].values
@@ -58,7 +58,7 @@ def hmm(df, num_states):
 
 def sparse(df):
     "Merge neighboring bins with same state"
-    df_sparse = bioframe.merge(df, on="state").dropna()
+    df_sparse = bioframe.merge(df, on=["state"]).dropna()
     return df_sparse
 
 
