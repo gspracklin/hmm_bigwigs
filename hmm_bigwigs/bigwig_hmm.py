@@ -40,7 +40,6 @@ def hmm(df, num_states):
     #     subset=["value"]
     # )  # this removes unmappable areas of chr (NaN is otherwise considered 0)
     vals = df["value"].values
-    print(vals)
     model = HiddenMarkovModel.from_samples(
         NormalDistribution, X=[vals], n_components=num_states
     )

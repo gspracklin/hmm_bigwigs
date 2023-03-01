@@ -82,8 +82,13 @@ def main():
                 .reset_index(drop=True)
             )
     df = create_df(inputfile=args.inputfile, view=view)
-    df = bf.assign_view(df, view).dropna(subset="value")
-    df = df.groupby("view_region").apply(hmm, num_states=args.num_states)
+    df = bf.assign_view(df, view)
+    df = (
+        df.groupby("view_region")
+        .filter(lambda x: len(x) > 1)
+        .groupby("view_region")
+        .apply(hmm, num_states=args.num_states)
+    )
     df_sparse = sparse(df)
     write_to_file(df_sparse, args.outputfile, cmap=args.cmap)
     if args.savesplit:
