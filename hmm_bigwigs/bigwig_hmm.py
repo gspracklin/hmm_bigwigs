@@ -40,12 +40,9 @@ def hmm(df, num_states):
     #     subset=["value"]
     # )  # this removes unmappable areas of chr (NaN is otherwise considered 0)
     vals = df["value"].values
-    try:
-        model = HiddenMarkovModel.from_samples(
-            NormalDistribution, X=[vals], n_components=num_states
-        )
-    except ValueError:
-        print(df)
+    model = HiddenMarkovModel.from_samples(
+        NormalDistribution, X=[vals], n_components=num_states
+    )
     states = model.predict(vals)
 
     # Rename states to increase with mean signal
