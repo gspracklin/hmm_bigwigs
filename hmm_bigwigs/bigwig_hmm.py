@@ -35,8 +35,10 @@ def create_df(inputfile, view):
 
 def hmm(df, num_states):
     "HMM program"
-    # df['value']=df['value'].replace(0,np.nan) #this removes unmappable areas of chr
-    # df_dropna=df.dropna(subset=['value']) #this removes unmappable areas of chr (NaN is otherwise considered 0)
+    # df["value"] = df["value"].replace(0, np.nan)  # this removes unmappable areas of chr
+    df = df.dropna(
+        subset=["value"]
+    )  # this removes unmappable areas of chr (NaN is otherwise considered 0)
     vals = df["value"].values
     model = HiddenMarkovModel.from_samples(
         NormalDistribution, X=[vals], n_components=num_states
