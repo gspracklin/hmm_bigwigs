@@ -23,20 +23,22 @@ def get_chroms(genome, ignoreXYMT=True):
     return chr_list
 
 
-def create_df(inputfile, chroms):
+def create_df(inputfile, view):
     "Create dataframe from bigwig"
-    df = pd.DataFrame(columns=["chrom", "start", "end", "value"])
-    for item in chroms:
-        ivals = list(bbi.fetch_intervals(inputfile, item, 0, -1))
+    df_list = []
+    for i, row in view.iterrows():
+        ivals = bbi.fetch_intervals(inputfile, row.chrom, row.start, row.end)
         df_new = pd.DataFrame(ivals, columns=["chrom", "start", "end", "value"])
-        df = df.append(df_new, ignore_index=True)
-    return df
+        df_list.append(df_new)
+    return pd.concat(df_list).reset_index(drop=True)
 
 
 def hmm(df, num_states):
     "HMM program"
-    # df['value']=df['value'].replace(0,np.nan) #this removes unmappable areas of chr
-    # df_dropna=df.dropna(subset=['value']) #this removes unmappable areas of chr (NaN is otherwise considered 0)
+    # df["value"] = df["value"].replace(0, np.nan)  # this removes unmappable areas of chr
+    # df = df.dropna(
+    #     subset=["value"]
+    # )  # this removes unmappable areas of chr (NaN is otherwise considered 0)
     vals = df["value"].values
     model = HiddenMarkovModel.from_samples(
         NormalDistribution, X=[vals], n_components=num_states
@@ -44,46 +46,26 @@ def hmm(df, num_states):
     states = model.predict(vals)
 
     # Rename states to increase with mean signal
-    order = np.argsort(df['value'].groupby(states).mean())
+    order = np.argsort(df["value"].groupby(states).mean())
     states = [order[s] for s in states]
     df["state"] = states
-    df['state'][np.isnan(df['value'])] = np.nan
+    df["state"][np.isnan(df["value"])] = np.nan
     return df
 
 
 def sparse(df):
     "Merge neighboring bins with same state"
-    chr_list = []
-    start_list = []
-    state_list = []
-    end_list = []
-
-    for item in df["chrom"].unique():
-        chrom_df = df[df["chrom"] == item].reset_index()
-
-        chr_list.append((chrom_df["chrom"].iloc[0]))
-        start_list.append((chrom_df["start"].iloc[0]))
-        state_list.append((chrom_df["state"].iloc[0]))
-        for index, row in chrom_df[1:].iterrows():
-            if chrom_df["state"].iloc[index] == chrom_df["state"].iloc[(index - 1)]:
-                continue
-            else:
-                end_list.append(chrom_df["end"].iloc[(index - 1)])
-                chr_list.append(chrom_df["chrom"].iloc[index])
-                start_list.append(chrom_df["start"].iloc[index])
-                state_list.append(chrom_df["state"].iloc[index])
-        if len(start_list) != len(end_list):
-            end_list.append(chrom_df["end"].iloc[(index)])
-
-    keys = ["chrom", "start", "end", "state"]
-    values = [chr_list, start_list, end_list, state_list]
-    dictionary = dict(zip(keys, values))
-    df_sparse = pd.DataFrame.from_dict(dictionary)
-    return df_sparse.dropna()
+    df_sparse = (
+        bioframe.merge(df, on=["state"])
+        .dropna()
+        .sort_values(["chrom", "start"])
+        .reset_index(drop=True)
+    )
+    return df_sparse
 
 
 def merge_different_hmmstates(df, cLAD, open):
-    "merge strong and weak HMM states into 2 "
+    "merge strong and weak HMM states into 2"
     import pandas as pd
 
     chr_list = []
@@ -121,14 +103,16 @@ def merge_different_hmmstates(df, cLAD, open):
     df_merge = pd.DataFrame.from_dict(dictionary)
     return df_merge
 
-def write_to_file(df, outputfile, num_states, cmap='coolwarm'):
-    states = list(range(num_states))
+
+def write_to_file(df, outputfile=None, cmap="coolwarm"):
+    states = list(sorted(df["state"].unique()))
     cmap = plt.get_cmap(cmap)
-    colors = {s:cmap(s/states[-1]) for s in states}
+    colors = {s: cmap(s / states[-1]) for s in states}
     df["score"] = "0"
     df["strand"] = "."
-    filename = outputfile + "_" + str(num_states) + "_state_HMM_colored.bed"
-    df['RGB'] = df["state"].apply(lambda x: ','.join([str(int(round(c*255))) for c in colors[x][:-1]]))
+    df["RGB"] = df["state"].apply(
+        lambda x: ",".join([str(int(round(c * 255))) for c in colors[x][:-1]])
+    )
     cols_to_keep = [
         "chrom",
         "start",
@@ -140,4 +124,11 @@ def write_to_file(df, outputfile, num_states, cmap='coolwarm'):
         "start",
         "RGB",
     ]
-    df.to_csv(filename, sep="\t", header=False, columns=cols_to_keep, index=False)
+    if outputfile:
+        df.to_csv(outputfile, sep="\t", header=False, columns=cols_to_keep, index=False)
+    else:
+        print(
+            df.to_csv(
+                outputfile, sep="\t", header=False, columns=cols_to_keep, index=False
+            )
+        )

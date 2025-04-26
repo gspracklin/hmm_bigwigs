@@ -3,7 +3,7 @@
 """
 Created on Fri Feb 28 15:30:21 2020
 
-@author: s1529682
+@author: Ilya Flyamer
 """
 
 from .bigwig_hmm import *
